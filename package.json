@@ -1,0 +1,35 @@
+{
+  "name": "GMC",
+  "version": "1.0.0",
+  "description": "Gray-Maping-Calculate Modules",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --recursive -t 50000 -s 1000",
+    "dev": "cross-env NODE_ENV=prod nodemon index.js",
+    "inspect": "cross-env NODE_ENV=test nodemon --inspect index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "keywords": [
+    "node",
+    "koa"
+  ],
+  "author": "jiayanqi",
+  "license": "ISC",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "ioredis": "^4.19.2",
+    "koa": "^2.13.0",
+    "koa-body": "^4.2.0",
+    "koa-router": "^10.0.0",
+    "lodash": "^4.17.20",
+    "mongoose": "^5.10.13",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.2",
+    "nodemon": "^2.0.6"
+  }
+}
