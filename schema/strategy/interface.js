@@ -7,11 +7,14 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const interfaceSchema = (platform) => new Schema({
+const interfaceSchema = new Schema({
   _id: String,
   name: String,
-  group: { type: String, default: 'common', index: true },
+  group: String,
   url: String,
+  url_encode: { type: Boolean, default: false },
+  // 类型: FORM / JSON / NONE
+  content_type: { type: String, default: 'FORM' },
   timeout: { type: Number, default: 3000 },
   method: { type: String, default: 'GET' },
   cache: {
@@ -40,4 +43,6 @@ const interfaceSchema = (platform) => new Schema({
   editor: String
 });
 
-module.exports = interfaceSchema;
+interfaceSchema.index({ group: 1 });
+
+module.exports = () => interfaceSchema;

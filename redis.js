@@ -5,6 +5,7 @@
  * @date: 2020-11-10
  */
 const { redisConf } = require('./config');
+const Type = require('./util/type');
 const Redis = require('ioredis');
 
 class RedisClient {
@@ -73,10 +74,12 @@ class RedisClient {
     if (str && str !== 'cacheerror') {
       try {
         const result = JSON.parse(str);
-        if (allowEmpty || !isEmptyObj(result)) {
+        if (allowEmpty || !Type.isEmptyObj(result)) {
           return result;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error(e)
+      }
     }
   }
 }

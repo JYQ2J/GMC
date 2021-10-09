@@ -19,6 +19,7 @@
   "author": "jiayanqi",
   "license": "ISC",
   "dependencies": {
+    "@koa/cors": "^3.1.0",
     "crypto": "^1.0.1",
     "ioredis": "^4.19.2",
     "koa": "^2.13.0",

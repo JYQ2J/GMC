@@ -4,7 +4,7 @@
  * @author: jiayanqi
  * @date: 2020-11-10
  */
-const { pfList, dbList, dbConf: conf } = require('../config');
+const { dbList, dbConf: conf } = require('../config');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 
@@ -12,7 +12,7 @@ const [db, dbModel] = [{}, {}];
 dbList.map(item => {
   const { collection, model = [], platform = [] } = item;
   const [url, options] = [
-    `mongodb://${conf.user.name}:${conf.user.pwd}@${conf.replica[process.env.NODE_ENV].join(',')}/${collection}`,
+    `mongodb://${conf.replica[process.env.NODE_ENV].join(',')}/${collection}`,
     {
       poolSize: 20,
       useNewUrlParser: true,

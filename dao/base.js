@@ -5,10 +5,19 @@
  * @date: 2020-11-10
  */
 const request = require('request');
+const querystring = require('querystring');
 
 class BaseDao {
   constructor(ctx) {
     this.ctx = ctx;
+  }
+  //记录单个接口响应时长及接口地址 (httpResponse.timingPhases, httpResponse.timings)
+  addRtt(httpResponse) {
+    const url = httpResponse.request.href;
+    this.ctx.rtt = this.ctx.rtt || [];
+    if (url) {
+      this.ctx.rtt.push({ url, time: new Date() - httpResponse.timingStart });
+    }
   }
   /**
   * 获取响应类型
@@ -94,6 +103,7 @@ class BaseDao {
               data = body;
             }
           }
+          this.addRtt(httpResponse);
         } else {
           data = this.getResponseErrorDetail(err, httpResponse, {
             method: 'GET',
@@ -153,6 +163,7 @@ class BaseDao {
           } catch (e) {
             data = body;
           }
+          this.addRtt(httpResponse);
         } else {
           data = this.getResponseErrorDetail(err, httpResponse, {
             method: 'POST',
@@ -191,6 +202,7 @@ class BaseDao {
           } catch (e) {
             data = body;
           }
+          this.addRtt(httpResponse);
         } else {
           data = this.getResponseErrorDetail(err, httpResponse, {
             method: 'PUT',
@@ -219,6 +231,7 @@ class BaseDao {
           } catch (e) {
             data = body;
           }
+          this.addRtt(httpResponse);
         } else {
           data = this.getResponseErrorDetail(err, httpResponse, {
             method: 'DELETE',

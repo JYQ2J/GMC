@@ -58,9 +58,9 @@ const formateTime = (time, isUTC = false) => {
   }
   const date = new Date(time);
   const [hour, minute, second] = [
-    Tool.toTwo(isUTC ? date.getUTCHours() : date.getHours()),
-    Tool.toTwo(isUTC ? date.getUTCMinutes() : date.getMinutes()),
-    Tool.toTwo(isUTC ? date.getUTCSeconds() : date.getSeconds())
+    toTwo(isUTC ? date.getUTCHours() : date.getHours()),
+    toTwo(isUTC ? date.getUTCMinutes() : date.getMinutes()),
+    toTwo(isUTC ? date.getUTCSeconds() : date.getSeconds())
   ];
   return `${hour}:${minite}:${second}`;
 }
@@ -73,7 +73,7 @@ const formateDateTime = (time, isUTC = false) => {
   if (isNaN(time)) {
     return '';
   }
-  return `${Tool.formatSeconds2Date(time, isUTC)} ${Tool.formateTime(time, isUTC)}`;
+  return `${formatSeconds2Date(time, isUTC)} ${formateTime(time, isUTC)}`;
 }
 /**
  * 将对象转换为特定的字符串输出，如："k1=v1|k2=v2|k3=v3"
@@ -187,12 +187,45 @@ const arrPush = (arr, item) => {
   return arr;
 }
 /**
+ * 数组去重(基于子属性)
+ */
+const dupFilter = (arr, prop) => {
+  let [result, temp] = [[], {}];
+  arr.map(item => {
+    const key = lodash.get(item, prop);
+    if (!temp[key]) {
+      result.push(item);
+      temp[key] = true;
+    }
+  });
+  return result;
+}
+/**
+ * 图片尺寸处理
+ */
+const getPicUrlWithSize = (url, spec, replace) => {
+  if (!url || !spec) {
+    return url;
+  }
+  if (replace) {
+    let reg = /_\d{1,3}_\d{1,3}/;
+    let matched = url.match(reg);
+    if (matched) {
+      return url.replace(matched[0], spec);
+    }
+  }
+  let pos = url.lastIndexOf('.');
+  let prefix = url.substr(0, pos);
+  let postfix = url.substr(pos);
+  return prefix + (spec || '') + postfix;
+}
+/**
  * 串行执行
  */
 const promiseSequenceExec = async (asyncArr, startIndex = 0) => {
   await asyncArr[startIndex]();
   if (startIndex + 1 < asyncArr.length) {
-    await Tool.promiseSequenceExec(asyncArr, startIndex + 1);
+    await promiseSequenceExec(asyncArr, startIndex + 1);
   } 
 }
 /**
@@ -222,6 +255,8 @@ module.exports = {
   getMap,
   A2O,
   arrPush,
+  dupFilter,
+  getPicUrlWithSize,
   promiseSequenceExec,
   getClientIp,
   ...lodash

@@ -20,7 +20,7 @@ class ApiService extends BaseService {
   getApiTree(tree, api, prevLevel = []) {
     let [loaded, unload] = [[], []];
     api.map(item => {
-      (item.params.every(param => (
+      ([...item.body, ...item.params, ...item.headers].every(param => (
         param.type !== 'INHERIT' || prevLevel.includes(param.from.replace(/_FORMATER$/, ''))
       )) ? loaded : unload).push(item);
     });
@@ -33,54 +33,74 @@ class ApiService extends BaseService {
     return tree;
   }
   // 获取接口参数对象
-  getApiParams(base, params, api, formatData, initData) {
+  getApiParams(ctxParams, base, params, api, formatData, initData) {
     const { ctx } = this;
     const { cookies, header, req, requestId } = ctx;
-    const qs = {};
+    let [qs, multiParamKey] = [{}, null];
     params.map(param => {
-      let { type = 'KV' , _id, value, from, multiKey, splitKey = ',', chunkSize = 1 } = param;
+      let { required = false, type = 'KV' , _id, value, from, multiKey, splitKey = ',', chunkSize = 1 } = param;
       if (type === 'KV') {
         qs[_id] = value;
+      } else if (type === 'FILE') {
+        const { path } = Tool.get(ctx.request.files, _id, {});
+        path && (qs[_id] = fs.createReadStream(path));
       } else if (type === 'INPUT') {
-        qs[_id] = ctx.params.env ? (ctx.query[_id] || value) : ctx.query[_id];
+        qs[_id] = ctx.params.env ? (ctxParams[_id] || value) : ctxParams[_id];
       } else if (type === 'COOKIE') {
-        qs[_id] = ctx.query[value] || cookies.get(value) || (value === 'QC005' ? 'NEW' : '');
+        qs[_id] = ctxParams[value] || cookies.get(value) || '';
       } else if (type === 'IP') {
-        qs[_id] = ctx.query.ip || Tool.getClientIp(req) || '';
+        qs[_id] = ctxParams.ip || Tool.getClientIp(req) || '';
       } else if (type === 'UA') {
         qs[_id] = header['user-agent'] || '';
       } else if (type === 'REFER') {
-        qs[_id] = ctx.query.referer || header.referer || '';
+        qs[_id] = ctxParams.referer || header.referer || '';
       } else if (type === 'REQID') {
         qs[_id] = requestId;
       } else if (type === 'TIMESTAMP') {
         qs[_id] = new Date().valueOf();
-      } else if (type === 'INHERIT') {
+      } else if (type === 'INHERIT' && from) {
         const regex = new RegExp('_FORMATER$');
         const fromApi = api.find(item => item.base._id === from.replace(regex, ''));
         const fromFormat = regex.test(from);
-        if (fromFormat) {
-          value = this.getKey(formatData, value);
+        // 参数值获取
+        (qs[_id] = {}) && (value = Tool.flatten(
+          (value || '').split(',').map(v => (
+            fromFormat ? this.getKey(formatData, v, qs[_id]) : this.getKey(initData[fromApi._id], v, qs[_id])
+          ) || [])
+        ));
+        // 批量参数处理
+        if (multiKey) {
+          qs[_id] = {
+            ...qs[_id],
+            out: multiKey,
+            in: Tool.arrayChunk(value, chunkSize).map(arr => arr.join(splitKey))
+          };
+          multiParamKey = _id;
         } else {
-          value = this.getKey(initData[fromApi._id], value);
-        }
-        if (Type.isArray(value)) {
-          if (multiKey) {
-            qs[_id] = {
-              out: multiKey,
-              in: Tool.chunk(value, chunkSize).map(arr => arr.join(splitKey))
-            };
+          if (base.method === 'PCW-API') {
+            qs[_id] = param.splitKey ? value[0] : value
           } else {
             qs[_id] = value.join(splitKey);
           }
-        } else {
-          qs[_id] = value;
         }
+      }
+      if (required && [undefined, ''].includes(type === 'APPEND' ? ctx.query[_id] : qs[_id])) {
+        throw new Error('arg_error');
       }
     });
     const sign = params.find(param => param.type === 'SIGN');
     if (sign) {
-      qs[sign._id] = Sign[sign.value](qs, base.url);
+      if (multiParamKey) {
+        qs[multiParamKey] = {
+          ...qs[multiParamKey],
+          sign: {
+            key: sign._id,
+            value: qs[multiParamKey].in.map(v => Sign[sign.value]({ ...qs, [multiParamKey]: v }, base.url))
+          }
+        };
+      } else {
+        qs[sign._id] = Sign[sign.value](qs, base.url);
+      }
     }
     return qs;
   }

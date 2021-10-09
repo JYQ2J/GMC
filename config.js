@@ -27,8 +27,7 @@ module.exports = {
         'test2.mongo:27017',
       ],
       prod: [
-        'prod1.mongo:27017',
-        'prod2.mongo:27017',
+        'localhost:27017',
       ]
     },
     user: {
@@ -37,11 +36,11 @@ module.exports = {
     }
   },
   redisConf: {
-    type: 'cluster',
+    type: 'master-slave',
     addr: [
       {
-        port: 7000,
-        host: 'x.x.x.x'
+        port: 6379,
+        host: 'localhost'
       }
     ]
   }
